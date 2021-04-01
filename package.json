@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:diffstream.etartServer"
+    "onCommand:diffstream.startServer"
   ],
   "main": "./out/extension.js",
   "contributes": {
