@@ -16,7 +16,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "diffstream.etartServer",
+        "command": "diffstream.startServer",
         "title": "Start server"
       },
       {
