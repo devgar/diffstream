@@ -1,40 +1,39 @@
 import { createServer } from 'http';
-import { Duplex } from 'stream';
+import { PassThrough } from 'stream';
 
-const stream = new Duplex();
+const stream = new PassThrough();
 
 export const server = createServer((req, res) => {
   if (req.url === "/stream") {
     res.writeHead(200, {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      'Transfer-Encoding': 'chunked'
+      "Transfer-Encoding": "chunked"
     });
     res.flushHeaders();
     res.write("[\n");
     stream.pipe(res);
     let count = 0;
-    const interval = setInterval(() => {
-      if (count > 10) { res.end(']'); clearInterval(interval); }
+    const _interval = setInterval(() => {
+      // if (count > 10) { res.end(']'); clearInterval(_interval); }
       count++;
-      res.write('{ "type": "ping" },');
-      res.write('\n');
+      res.write(`{ "type": "ping", "count": ${count} },\n`);
     }, 1000);
     return;
   }
   res.end(req.url);
 });
 
-export const send = function send(type: string, object: any) {
+export const send = function send(type: string, data: any) {
   stream.write(JSON.stringify({
     type,
-    object
+    data
   }, null, 2));
-  stream.write(',\n');
+  stream.write(",\n");
 };
 
 export const getPort = function getPort() {
   const address = server.address();
-	return typeof address === 'string' ? address : address?.port;
+	return typeof address === "string" ? address : address?.port;
 };
