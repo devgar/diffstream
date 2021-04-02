@@ -25,15 +25,17 @@ export const server = createServer((req, res) => {
   res.end(req.url);
 });
 
-export const send = function send(type: string, data: any) {
-  stream.write(JSON.stringify({
-    type,
-    data
-  }, null, 2));
-  stream.write(",\n");
-};
-
 export const getPort = function getPort() {
   const address = server.address();
 	return typeof address === "string" ? address : address?.port;
+};
+
+export const send = function send(type: string, data: any) {
+  if (getPort()) {
+    stream.write(JSON.stringify({
+      type,
+      data
+    }, null, 2));
+    stream.write(",\n");
+  }
 };
