@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Visual Studio Show!</title>
+</head>
+
+<body>
+  <h1>Hello, world!</h1>
+  <pre>
+    <code>
+
+    </code>
+  </pre>
+  <script>
+    const code = document.querySelector('code');
+    const eventSource = new EventSource("/stream");
+    eventSource.onmessage = function(e) {
+      console.log('Unhandled Message:', e.data);
+    };
+    eventSource.onerror = function(e) {
+      console.error(e);
+    };
+    eventSource.addEventListener('ping', (e) => console.log('ping', e.data) );
+    
+    eventSource.addEventListener('changeTextDocument', (e) => 
+      console.log('changeTextDocument', e.data)
+    );
+
+    eventSource.addEventListener('changeActiveTextEditor', (e) => 
+      console.log('changeActiveTextEditor', e.data)
+    );
+
+    eventSource.addEventListener('changeTextEditorVisibleRanges', (e) => 
+      console.log('changeTextEditorVisibleRanges', e.data)
+    );
+  </script>
+</body>
+
+</html>

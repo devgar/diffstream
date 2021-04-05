@@ -34,10 +34,10 @@ export function activate(context: vscode.ExtensionContext) {
 	let startServerDisposable = vscode.commands
 	.registerCommand('diffstream.startServer', () => {
 		// Check if server is enabled and enable it if not
-		const port = getPort();
+		let port = getPort();
 		if (!server.address()) {
 			server.listen(()=> {
-				const port = getPort();
+				port = getPort();
 				vscode.window.showInformationMessage(`diffstream server running at port ${port}`);
 			});
 		} else {
