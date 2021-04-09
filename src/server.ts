@@ -3,6 +3,8 @@ import { createReadStream } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
 
+import * as vscode from 'vscode';
+
 const p = join(__dirname, '..', 'static');
 const stream = new PassThrough();
 
@@ -18,6 +20,19 @@ export const server = createServer((req, res) => {
       //"Transfer-Encoding": "chunked"
     });
     res.flushHeaders();
+
+    const textEditor = vscode.window.activeTextEditor;
+    if (textEditor) {
+      vscode.workspace.fs.readFile(textEditor.document.uri).then((value => {
+        const obj = {
+          fileName: textEditor.document.fileName,
+          language: textEditor.document.languageId,
+          content: value.toString()
+        };
+        res.write(`event: initial\n`);
+        res.write(`data: ${JSON.stringify(obj)}\n\n`);
+      }));
+    }
     stream.pipe(res);
     let count = 0;
     const _interval = setInterval(() => {
