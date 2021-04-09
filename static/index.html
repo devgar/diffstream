@@ -2,18 +2,29 @@
 <html>
 
 <head>
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism.css" rel="stylesheet" />
+  <script>
+    window.Prism = window.Prism || {};
+    Prism.manual = true;
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
   <title>Visual Studio Show!</title>
 </head>
 
 <body>
-  <h1>Hello, world!</h1>
-  <pre>
-    <code>
+  <pre><code class="language-css">/* MAIN STYLE FILE */
+p {
+  color: red;
+}
 
-    </code>
+::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}</code>
   </pre>
   <script>
-    const code = document.querySelector('code');
+    const CODE = document.querySelector('code');
     const eventSource = new EventSource("/stream");
     eventSource.onmessage = function(e) {
       console.log('Unhandled Message:', e.data);
@@ -23,17 +34,30 @@
     };
     eventSource.addEventListener('ping', (e) => console.log('ping', e.data) );
     
-    eventSource.addEventListener('changeTextDocument', (e) => 
+    eventSource.addEventListener('changeTextDocument', (e) => {
       console.log('changeTextDocument', e.data)
-    );
+      window.LASTDATA = e.data
+    });
 
-    eventSource.addEventListener('changeActiveTextEditor', (e) => 
+    eventSource.addEventListener('changeActiveTextEditor', (e) => {
       console.log('changeActiveTextEditor', e.data)
-    );
+      window.LASTDATA = e.data
+    });
 
-    eventSource.addEventListener('changeTextEditorVisibleRanges', (e) => 
+    eventSource.addEventListener('changeTextEditorVisibleRanges', (e) => {
       console.log('changeTextEditorVisibleRanges', e.data)
-    );
+      window.LASTDATA = e.data
+    });
+    let r = ''
+    setTimeout(() => {
+      let c = `const c = (d) => "OK"
+
+console.log( c() ? 1 : 3 )`
+      r = Prism.highlight(c, Prism.languages.javascript, 'javascript')
+      console.log('RENDERED', r)
+      CODE.innerHTML = r
+      CODE.className = 'language-javascript'
+    }, 2000)
   </script>
 </body>
 
