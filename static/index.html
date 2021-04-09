@@ -26,6 +26,7 @@ p {
   <script>
     const CODE = document.querySelector('code');
     const eventSource = new EventSource("/stream");
+    let __documnet = {};
     eventSource.onmessage = function(e) {
       console.log('Unhandled Message:', e.data);
     };
@@ -33,6 +34,16 @@ p {
       console.error(e);
     };
     eventSource.addEventListener('ping', (e) => console.log('ping', e.data) );
+
+    eventSource.addEventListener('initial', (e) => {
+      console.log('initial', e.data)
+      window.LASTDATA = e.data
+      __documnet = JSON.parse(e.data)
+      const { language, content } = __documnet
+      const r = Prism.highlight(content, Prism.languages[language], language)
+      CODE.innerHTML = r
+      CODE.className = `language-${language}`
+    });
     
     eventSource.addEventListener('changeTextDocument', (e) => {
       console.log('changeTextDocument', e.data)
@@ -48,16 +59,6 @@ p {
       console.log('changeTextEditorVisibleRanges', e.data)
       window.LASTDATA = e.data
     });
-    let r = ''
-    setTimeout(() => {
-      let c = `const c = (d) => "OK"
-
-console.log( c() ? 1 : 3 )`
-      r = Prism.highlight(c, Prism.languages.javascript, 'javascript')
-      console.log('RENDERED', r)
-      CODE.innerHTML = r
-      CODE.className = 'language-javascript'
-    }, 2000)
   </script>
 </body>
 
