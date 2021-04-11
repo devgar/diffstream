@@ -12,19 +12,30 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// WORKSPACE listeners
 
-	vscode.workspace.onDidChangeTextDocument((change) => {
-		const { document, contentChanges } = change;
+	vscode.workspace.onDidChangeTextDocument((textDocumentChange) => {
+		const { document, contentChanges } = textDocumentChange;
 		const content = document.getText();
 		send("changeTextDocument", { document, contentChanges, content });
 	});
 
-	vscode.workspace.onDidCreateFiles;
+	vscode.workspace.onDidCreateFiles(({ files }) => {
+		// Each file is an Uri
+		send("fileCreated", { files });
+	});
 
-	vscode.workspace.onDidDeleteFiles;
+	vscode.workspace.onDidDeleteFiles(({ files }) => {
+		// Each file is an Uri
+		send("fileDeleted", { files });
+	});
 
-	vscode.workspace.onDidRenameFiles;
+	vscode.workspace.onDidRenameFiles(({ files }) => {
+		// Here each file is { oldUri: Uri, newUri: Uri }
+		send("fileRenamed", { files });
+	});
 
-	vscode.workspace.onDidSaveTextDocument;
+	vscode.workspace.onDidSaveTextDocument((textDocument) => {
+		send("savedTextDocument", textDocument);
+	});
 
 	// WINDOW listeners
 	
@@ -37,15 +48,21 @@ export function activate(context: vscode.ExtensionContext) {
 		send("changeTextEditorVisibleRanges", visibleRangesChange);
 	});
 
-	vscode.window.onDidChangeTextEditorSelection;
+	vscode.window.onDidChangeTextEditorSelection((selectionChange) => {
+		send("changeTextEditorSelection", selectionChange);
+	});
 
 	vscode.window.onDidChangeTextEditorViewColumn((viewColumnChange) => {
 		send("changeTextEditorViewColumn", viewColumnChange);
 	});
 
-	vscode.window.onDidChangeWindowState;
+	vscode.window.onDidChangeWindowState((windowState) => {
+		send("changeWindowState", windowState);
+	});
 
-	vscode.window.onDidChangeActiveTerminal;
+	vscode.window.onDidChangeActiveTerminal((terminal) => {
+		send("changeActiveTerminal", terminal);
+	});
 
 	// Commands had been defined in the package.json file
 	// Now provide the implementation of the commands with registerCommand
