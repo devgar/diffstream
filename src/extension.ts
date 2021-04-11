@@ -14,18 +14,38 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.workspace.onDidChangeTextDocument((change) => {
 		const { document, contentChanges } = change;
-		send("changeTextDocument", { document, contentChanges });
+		const content = document.getText();
+		send("changeTextDocument", { document, contentChanges, content });
 	});
+
+	vscode.workspace.onDidCreateFiles;
+
+	vscode.workspace.onDidDeleteFiles;
+
+	vscode.workspace.onDidRenameFiles;
+
+	vscode.workspace.onDidSaveTextDocument;
 
 	// WINDOW listeners
 	
 	vscode.window.onDidChangeActiveTextEditor((textEditor) => {
-		send("changeActiveTextEditor", textEditor);
+		const content = textEditor?.document.getText();
+		send("changeActiveTextEditor", { textEditor, content });
 	});
 
-	vscode.window.onDidChangeTextEditorVisibleRanges((ranges) => {
-		send("changeTextEditorVisibleRanges", ranges);
+	vscode.window.onDidChangeTextEditorVisibleRanges((visibleRangesChange) => {
+		send("changeTextEditorVisibleRanges", visibleRangesChange);
 	});
+
+	vscode.window.onDidChangeTextEditorSelection;
+
+	vscode.window.onDidChangeTextEditorViewColumn((viewColumnChange) => {
+		send("changeTextEditorViewColumn", viewColumnChange);
+	});
+
+	vscode.window.onDidChangeWindowState;
+
+	vscode.window.onDidChangeActiveTerminal;
 
 	// Commands had been defined in the package.json file
 	// Now provide the implementation of the commands with registerCommand

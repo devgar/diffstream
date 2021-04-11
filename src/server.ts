@@ -23,15 +23,15 @@ export const server = createServer((req, res) => {
 
     const textEditor = vscode.window.activeTextEditor;
     if (textEditor) {
-      vscode.workspace.fs.readFile(textEditor.document.uri).then((value => {
-        const obj = {
-          fileName: textEditor.document.fileName,
-          language: textEditor.document.languageId,
-          content: value.toString()
-        };
-        res.write(`event: initial\n`);
-        res.write(`data: ${JSON.stringify(obj)}\n\n`);
-      }));
+      
+      const obj = {
+        fileName: textEditor.document.fileName,
+        language: textEditor.document.languageId,
+        content: textEditor.document.getText()
+      };
+      res.write(`event: initial\n`);
+      res.write(`data: ${JSON.stringify(obj)}\n\n`);
+      
     }
     stream.pipe(res);
     let count = 0;

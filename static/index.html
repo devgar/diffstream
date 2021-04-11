@@ -12,21 +12,29 @@
   <title>Visual Studio Show!</title>
 </head>
 
-<body>
-  <pre><code class="language-css">/* MAIN STYLE FILE */
-p {
-  color: red;
-}
-
-::placeholder {
-  color: var(--placeholder);
-  opacity: 1;
-}</code>
-  </pre>
-  <script>
+<body><!--
+--><pre><code class="language-css"></code></pre><!--
+  --><script>
+    function render (content, language) {
+      if (!Prism.languages[language]) {
+        Prism.plugins.autoloader.loadLanguages('markdown', function () {
+          if (!Prism.languages[language]) {
+            CODE.innerText = content
+            CODE.className = `language-none`
+          } else {
+            CODE.innerHTML = Prism.highlight(content, Prism.languages[language], language)
+            CODE.className = `language-${language}`    
+          }
+        })
+      } else {
+        CODE.innerHTML = Prism.highlight(content, Prism.languages[language], language)
+        CODE.className = `language-${language}`
+      }
+        
+    }
     const CODE = document.querySelector('code');
     const eventSource = new EventSource("/stream");
-    let __documnet = {};
+    let __DOC = {};
     eventSource.onmessage = function(e) {
       console.log('Unhandled Message:', e.data);
     };
@@ -36,30 +44,43 @@ p {
     eventSource.addEventListener('ping', (e) => console.log('ping', e.data) );
 
     eventSource.addEventListener('initial', (e) => {
-      console.log('initial', e.data)
-      window.LASTDATA = e.data
-      __documnet = JSON.parse(e.data)
-      const { language, content } = __documnet
-      const r = Prism.highlight(content, Prism.languages[language], language)
-      CODE.innerHTML = r
-      CODE.className = `language-${language}`
+      __DOC = JSON.parse(e.data)
+      const { language, content } = __DOC
+      render(content, language)
     });
     
     eventSource.addEventListener('changeTextDocument', (e) => {
-      console.log('changeTextDocument', e.data)
-      window.LASTDATA = e.data
+      const data = JSON.parse(e.data)
+      window.LASTDATA = data // DEBUG
+      if (data.document.fileName !== __DOC.fileName) return
+      if (!data.contentChanges.length) return;
+      // TODO: Instead of rewritting edit using contentChanges
+      // const eol = data.document.eol == 2 ? '\r\n' : '\n'
+      const language = data.document.languageId
+      __DOC.content = data.content
+      if (Prism.languages[language]) 
+        CODE.innerText = Prism.highlight(data.content,  Prism.languages[language], language)
+      else
+        CODE.innerText = data.content
     });
 
     eventSource.addEventListener('changeActiveTextEditor', (e) => {
-      console.log('changeActiveTextEditor', e.data)
-      window.LASTDATA = e.data
+      const data = JSON.parse(e.data)
+      if (!data.textEditor) {
+        __DOC = {}
+        render("", "")
+        return
+      }
+      const { content } = data
+      const { fileName, languageId: language } = data.textEditor.document
+      __DOC = { content, fileName, language }
+      render(content, language)
     });
 
     eventSource.addEventListener('changeTextEditorVisibleRanges', (e) => {
       console.log('changeTextEditorVisibleRanges', e.data)
-      window.LASTDATA = e.data
     });
-  </script>
-</body>
+  </script><!--
+  --></body>
 
 </html>
