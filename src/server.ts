@@ -1,11 +1,13 @@
 import { createServer } from 'http';
-import { createReadStream } from 'fs';
-import { join } from 'path';
+import { createReadStream, promises as fs } from 'fs';
+import { join, extname } from 'path';
 import { PassThrough } from 'stream';
 
 import * as vscode from 'vscode';
+import { errorMonitor } from 'node:events';
 
 const p = join(__dirname, '..', 'static');
+const m = join(__dirname, '..', 'node_modules');
 const stream = new PassThrough();
 
 export const server = createServer((req, res) => {
@@ -49,6 +51,25 @@ export const server = createServer((req, res) => {
       "Content-Type": "text/html"
     });
     createReadStream(join(p, "index.html")).pipe(res);
+    return;
+  }
+
+  if (req.url?.startsWith('/modules/')) {
+
+    const route = join(m, req.url.slice(9));
+    fs.stat(route).then(stats => {
+      if (stats.isFile()) {
+        const headers = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          "Content-Type": "text/javascript "
+        };
+        res.writeHead(200, headers);
+        createReadStream(route).pipe(res);
+      } else { throw new Error(); }
+    }).catch(err => {
+      res.writeHead(404);
+      res.end('NOT FOUND (or other error)\n' + JSON.stringify(err, null, 2));
+    });
     return;
   }
 
