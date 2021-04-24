@@ -64,6 +64,10 @@ export function activate(context: vscode.ExtensionContext) {
 		send("changeActiveTerminal", terminal);
 	});
 
+	vscode.window.onDidChangeTextEditorOptions((optionsChangeEvent) => {
+		send('changeTextEditorOptions', optionsChangeEvent);
+	});
+
 	// Commands had been defined in the package.json file
 	// Now provide the implementation of the commands with registerCommand
 	// The commandId parameter must match the command field in package.json

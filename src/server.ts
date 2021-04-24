@@ -25,6 +25,7 @@ export const server = createServer((req, res) => {
     if (textEditor) {
       
       const obj = {
+        uri: textEditor.document.uri,
         fileName: textEditor.document.fileName,
         language: textEditor.document.languageId,
         content: textEditor.document.getText()
