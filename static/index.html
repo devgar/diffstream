@@ -2,85 +2,108 @@
 <html>
 
 <head>
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism.css" rel="stylesheet" />
-  <script>
-    window.Prism = window.Prism || {};
-    Prism.manual = true;
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/prism.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
+	<script src="https://unpkg.com/monaco-editor@0.23.0/min/vs/loader.js"></script>
+	<style>
+		body { margin: 0; padding: 0;}
+		#container {
+			width: 100vw;
+			height: 100vh;
+			overflow: hidden;
+		}
+	</style>
   <title>Visual Studio Show!</title>
 </head>
 
-<body><!--
---><pre><code class="language-css"></code></pre><!--
-  --><script>
-    function render (content, language) {
-      if (!Prism.languages[language]) {
-        Prism.plugins.autoloader.loadLanguages('markdown', function () {
-          if (!Prism.languages[language]) {
-            CODE.innerText = content
-            CODE.className = `language-none`
-          } else {
-            CODE.innerHTML = Prism.highlight(content, Prism.languages[language], language)
-            CODE.className = `language-${language}`    
-          }
-        })
-      } else {
-        CODE.innerHTML = Prism.highlight(content, Prism.languages[language], language)
-        CODE.className = `language-${language}`
-      }
-        
-    }
-    const CODE = document.querySelector('code');
-    const eventSource = new EventSource("/stream");
-    let __DOC = {};
-    eventSource.onmessage = function(e) {
-      console.log('Unhandled Message:', e.data);
-    };
-    eventSource.onerror = function(e) {
+<body>
+	<div id="container" style="min-height:100vh;"></div>
+	<script>
+
+		function parseRange(r) {
+			return { 
+				startColumn: r[0].character + 1,
+				startLineNumber: r[0].line + 1,
+				endColumn: r[1].character + 1,
+				endLineNumber: r[1].line + 1,
+			}
+		}
+
+		function parseSelection(s) {
+			return {
+				selectionStartColumn: s.start.character + 1,
+				selectionStartLineNumber: s.start.line + 1,
+				positionColumn: s.end.character + 1,
+				positionLineNumber: s.end.line + 1,
+			}
+		}
+		require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.23.0/min/vs' } });
+
+		require(['vs/editor/editor.main'], function () {
+			const models = new Map() // <string, Model>
+
+			const editor = monaco.editor.create(document.getElementById('container'), {
+				readOnly: true
+			});
+
+			window['EDITOR'] = editor
+
+			const eventSource = new EventSource("/stream");
+    
+			eventSource.onmessage = function(e) {
+				console.log('Unhandled Message:', e.data);
+			};
+			
+			eventSource.onerror = function(e) {
       console.error(e);
     };
-    eventSource.addEventListener('ping', (e) => console.log('ping', e.data) );
-
+    
+		eventSource.addEventListener('ping', (e) => {} );
+		
     eventSource.addEventListener('initial', (e) => {
-      __DOC = JSON.parse(e.data)
-      const { language, content } = __DOC
-      render(content, language)
+			const { language, content: value, uri: eventUri } = JSON.parse(e.data)
+			const uri = monaco.Uri.from(eventUri)
+			const model = monaco.editor.createModel(value, language, uri)
+			models.set(uri.toString(), model)
+			editor.setModel(model)
     });
     
     eventSource.addEventListener('changeTextDocument', (e) => {
       const data = JSON.parse(e.data)
-      window.LASTDATA = data // DEBUG
-      if (data.document.fileName !== __DOC.fileName) return
-      if (!data.contentChanges.length) return;
-      // TODO: Instead of rewritting edit using contentChanges
-      // const eol = data.document.eol == 2 ? '\r\n' : '\n'
-      const language = data.document.languageId
-      __DOC.content = data.content
-      if (Prism.languages[language]) 
-        CODE.innerText = Prism.highlight(data.content,  Prism.languages[language], language)
-      else
-        CODE.innerText = data.content
+			const changes = data.contentChanges.map(cc => 
+				({ range: parseRange(cc.range), text: cc.text})
+				)
+			editor.getModel().pushEditOperations([], changes) // executeEdits('EventSource', changes)
     });
 
     eventSource.addEventListener('changeActiveTextEditor', (e) => {
-      const data = JSON.parse(e.data)
-      if (!data.textEditor) {
-        __DOC = {}
-        render("", "")
-        return
-      }
-      const { content } = data
-      const { fileName, languageId: language } = data.textEditor.document
-      __DOC = { content, fileName, language }
-      render(content, language)
+			const data = JSON.parse(e.data)
+			
+			// Set new model
+			const uri = monaco.Uri.from(data.textEditor.document.uri)
+			const keyUri = uri.toString()
+			if (models.has(keyUri)) {
+				const model = models.get(keyUri)
+				editor.setModel(model)
+			} else {
+				const language = data.textEditor.document.languageId
+				const value = data.content
+				const model = monaco.editor.createModel(value, language, uri)
+				models.set(keyUri, model)
+				editor.setModel(model)
+			}
     });
-
+		
     eventSource.addEventListener('changeTextEditorVisibleRanges', (e) => {
-      console.log('changeTextEditorVisibleRanges', e.data)
+			const { visibleRanges } = JSON.parse(e.data)
+			const range = parseRange(visibleRanges[0])
+			console.log('Scroll to', range)
+			editor.revealRangeNearTop(range)
     });
-  </script><!--
-  --></body>
 
+		eventSource.addEventListener('changeTextEditorSelection', (e) => {
+			const { selections } = JSON.parse(e.data)
+			editor.setSelections(selections.map(s => parseSelection(s)))
+		});
+	});
+  </script>
+</body>
 </html>
